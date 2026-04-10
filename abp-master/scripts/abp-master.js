@@ -2,10 +2,10 @@ Hooks.once("ready", () => {
   console.log("ABP Master Manager 5.3 loaded");
 
   const ICONS = {
-    defensive: "modules/abp-master/icons/defensive.PNG",
-    physical: "modules/abp-master/icons/physical.PNG",
-    mental: "modules/abp-master/icons/mental.PNG",
-    legendary: "modules/abp-master/icons/legendary.PNG"
+    defensive: "systems/pf1/icons/skills/weapon_15.jpg",
+    physical: "systems/pf1/icons/feats/athletic.jpg",
+    mental: "systems/pf1/icons/misc/brain.png",
+    legendary: "systems/pf1/icons/spells/runes-royal-3.jpg"
   };
 
   game.abpMaster = {
