@@ -3,22 +3,26 @@ Hooks.once("ready", () => {
 
   const ICONS = {
     defensive: "systems/pf1/icons/skills/weapon_15.jpg",
-    physical: "systems/pf1/icons/feats/athletic.jpg",
-    mental: "systems/pf1/icons/misc/brain.png",
+    physical:  "systems/pf1/icons/feats/athletic.jpg",
+    mental:    "systems/pf1/icons/misc/brain.png",
     legendary: "systems/pf1/icons/spells/runes-royal-3.jpg"
   };
+
+  /* Shorthand helpers */
+  const loc = key         => game.i18n.localize(key);
+  const fmt = (key, data) => game.i18n.format(key, data);
 
   game.abpMaster = {
 
     async openManager(actor) {
 
       if (!actor) {
-        ui.notifications.warn("Nessun attore selezionato.");
+        ui.notifications.warn(loc("ABP.NoActorSelected"));
         return;
       }
 
       const rawHD = actor.system.attributes?.hd?.total || 0;
-const lvl = Math.min(rawHD, 20);
+      const lvl   = Math.min(rawHD, 20);
 
       /* ========================= */
       /* UTILITIES                 */
@@ -45,7 +49,7 @@ const lvl = Math.min(rawHD, 20);
                       </div></form>`,
             buttons: {
               ok: {
-                label: "Conferma",
+                label: loc("ABP.Labels.Confirm"),
                 callback: html => resolve(html.find("#choice").val())
               }
             }
@@ -54,6 +58,8 @@ const lvl = Math.min(rawHD, 20);
         });
       }
 
+      /* I nomi dei buff usano il prefisso fisso "ABP –" / "Legendary –"
+         così cleanAllABP() li trova sempre indipendentemente dalla lingua. */
       async function cleanAllABP() {
         for (let i of actor.items.filter(i =>
           i.name.startsWith("ABP –") ||
@@ -97,14 +103,14 @@ const lvl = Math.min(rawHD, 20);
 
         if (defenseChanges.length)
           await actor.createEmbeddedDocuments("Item", [{
-            name:"ABP – Difese",
-            type:"buff",
-            img: ICONS.defensive,
-            system:{
-              active:true,
-              subType:"perm",
-              hideFromToken:true,
-              changes:defenseChanges
+            name:  loc("ABP.Buffs.Defenses"),
+            type:  "buff",
+            img:   ICONS.defensive,
+            system: {
+              active:        true,
+              subType:       "perm",
+              hideFromToken: true,
+              changes:       defenseChanges
             }
           }]);
 
@@ -112,74 +118,76 @@ const lvl = Math.min(rawHD, 20);
         /* PROWESS                   */
         /* ========================= */
 
-        async function buildProwess(optionsFunc, statsObj, label, icon) {
+        async function buildProwess(optionsFunc, statKeys, labelKey, icon) {
 
           let options = optionsFunc(lvl);
           if (!options) return;
 
-          let pattern = await chooseOption(`Distribuzione ${label}`, options);
-          let values = pattern.split("-").map(v=>parseInt(v));
-          let chosen = [];
+          /* Costruisce la mappa localizzata { chiave: nome_tradotto } */
+          const localizedStats = Object.fromEntries(
+            statKeys.map(k => [k, loc(`ABP.Stats.${k}`)])
+          );
 
-          for (let i=0;i<values.length;i++) {
+          const label   = loc(`ABP.Labels.${labelKey}`);
+          const pattern = await chooseOption(fmt("ABP.Dialogs.Distribution", { label }), options);
+          const values  = pattern.split("-").map(v => parseInt(v));
+          const chosen  = [];
 
-            let stat = await chooseOption(
-              `Scegli ${label} (${values[i]})`,
+          for (let i = 0; i < values.length; i++) {
+
+            const stat = await chooseOption(
+              fmt("ABP.Dialogs.ChooseStat", { label, value: values[i] }),
               Object.fromEntries(
-                Object.entries(statsObj).filter(([k])=>!chosen.includes(k))
+                Object.entries(localizedStats).filter(([k]) => !chosen.includes(k))
               )
             );
 
             chosen.push(stat);
           }
 
-          for (let i=0;i<chosen.length;i++) {
-
+          for (let i = 0; i < chosen.length; i++) {
             await actor.createEmbeddedDocuments("Item", [{
-              name:`ABP – ${label} (${statsObj[chosen[i]]})`,
-              type:"buff",
-              img: icon,
-              system:{
-                active:true,
-                subType:"perm",
-                hideFromToken:true,
-                changes:[{
-                  formula:`+${values[i]}`,
-                  operator:"add",
-                  priority:0,
-                  target:chosen[i],
-                  type:"enh"
+              name:  `ABP – ${labelKey} (${localizedStats[chosen[i]]})`,
+              type:  "buff",
+              img:   icon,
+              system: {
+                active:        true,
+                subType:       "perm",
+                hideFromToken: true,
+                changes: [{
+                  formula:  `+${values[i]}`,
+                  operator: "add",
+                  priority: 0,
+                  target:   chosen[i],
+                  type:     "enh"
                 }]
               }
             }]);
           }
         }
 
-        function mentalOptions(level){
-          if(level<6) return null;
-          if(level<11) return {"2":"2"};
-          if(level<13) return {"4":"4"};
-          if(level<15) return {"4-2":"4 / 2"};
-          if(level<17) return {"6-2":"6 / 2","4-4":"4 / 4"};
-          if(level<18) return {"6-2-2":"6 / 2 / 2","4-4-2":"4 / 4 / 2"};
+        function mentalOptions(level) {
+          if (level < 6)  return null;
+          if (level < 11) return {"2":"2"};
+          if (level < 13) return {"4":"4"};
+          if (level < 15) return {"4-2":"4 / 2"};
+          if (level < 17) return {"6-2":"6 / 2","4-4":"4 / 4"};
+          if (level < 18) return {"6-2-2":"6 / 2 / 2","4-4-2":"4 / 4 / 2"};
           return {"6-4-2":"6 / 4 / 2","4-4-4":"4 / 4 / 4"};
         }
 
-        function physicalOptions(level){
-          if(level<7) return null;
-          if(level<12) return {"2":"2"};
-          if(level<13) return {"4":"4"};
-          if(level<16) return {"4-2":"4 / 2"};
-          if(level<17) return {"6-2":"6 / 2","4-4":"4 / 4"};
-          if(level<18) return {"6-2-2":"6 / 2 / 2","4-4-2":"4 / 4 / 2"};
+        function physicalOptions(level) {
+          if (level < 7)  return null;
+          if (level < 12) return {"2":"2"};
+          if (level < 13) return {"4":"4"};
+          if (level < 16) return {"4-2":"4 / 2"};
+          if (level < 17) return {"6-2":"6 / 2","4-4":"4 / 4"};
+          if (level < 18) return {"6-2-2":"6 / 2 / 2","4-4-2":"4 / 4 / 2"};
           return {"6-4-2":"6 / 4 / 2","4-4-4":"4 / 4 / 4"};
         }
 
-        const mentalStats={int:"Intelligenza",wis:"Saggezza",cha:"Carisma"};
-        const physicalStats={str:"Forza",dex:"Destrezza",con:"Costituzione"};
-
-        await buildProwess(mentalOptions,mentalStats,"Mental",ICONS.mental);
-        await buildProwess(physicalOptions,physicalStats,"Physical",ICONS.physical);
+        await buildProwess(mentalOptions,   ["int","wis","cha"], "Mental",   ICONS.mental);
+        await buildProwess(physicalOptions, ["str","dex","con"], "Physical", ICONS.physical);
       }
 
       /* ========================= */
@@ -188,47 +196,53 @@ const lvl = Math.min(rawHD, 20);
 
       async function applyLegendary() {
 
-        if(lvl < 19) return;
+        if (lvl < 19) return;
 
-        let gifts = (lvl>=20)?8:3;
+        let gifts     = (lvl >= 20) ? 8 : 3;
         let remaining = gifts;
 
         let removePhysical = false;
-        let removeMental = false;
+        let removeMental   = false;
 
-        while(remaining > 0){
+        while (remaining > 0) {
 
           const options = {
-            ability:"Legendary Ability (+1 inherent)",
-            body:"Legendary Body (2)",
-            mind:"Legendary Mind (2)"
+            ability: loc("ABP.Legendary.ability"),
+            body:    loc("ABP.Legendary.body"),
+            mind:    loc("ABP.Legendary.mind")
           };
 
-          let choice = await chooseOption(`Gifts disponibili: ${remaining}`, options);
+          const choice = await chooseOption(
+            fmt("ABP.Dialogs.GiftsAvailable", { remaining }),
+            options
+          );
 
-          const stats={
-            str:"Forza",dex:"Destrezza",con:"Costituzione",
-            int:"Intelligenza",wis:"Saggezza",cha:"Carisma"
-          };
+          const allStats = ["str","dex","con","int","wis","cha"];
+          const localizedAllStats = Object.fromEntries(
+            allStats.map(k => [k, loc(`ABP.Stats.${k}`)])
+          );
 
-          if(choice === "ability"){
+          if (choice === "ability") {
 
-            let stat = await chooseOption("Scegli caratteristica", stats);
+            const stat = await chooseOption(
+              loc("ABP.Dialogs.ChooseStat_Legendary"),
+              localizedAllStats
+            );
 
-            await actor.createEmbeddedDocuments("Item",[{
-              name:`Legendary – Ability (${stats[stat]})`,
-              type:"buff",
-              img: ICONS.legendary,
-              system:{
-                active:true,
-                subType:"perm",
-                hideFromToken:true,
-                changes:[{
-                  formula:"+1",
-                  operator:"add",
-                  priority:0,
-                  target:stat,
-                  type:"inherent"
+            await actor.createEmbeddedDocuments("Item", [{
+              name:  `Legendary – Ability (${localizedAllStats[stat]})`,
+              type:  "buff",
+              img:   ICONS.legendary,
+              system: {
+                active:        true,
+                subType:       "perm",
+                hideFromToken: true,
+                changes: [{
+                  formula:  "+1",
+                  operator: "add",
+                  priority: 0,
+                  target:   stat,
+                  type:     "inherent"
                 }]
               }
             }]);
@@ -236,52 +250,46 @@ const lvl = Math.min(rawHD, 20);
             remaining--;
           }
 
-          if(choice === "body" && remaining >= 2){
+          if (choice === "body" && remaining >= 2) {
             removePhysical = true;
             remaining -= 2;
-            await applyLegendarySet("Physical",["str","dex","con"],[6,6,4]);
+            await applyLegendarySet("Physical", ["str","dex","con"], [6,6,4]);
           }
 
-          if(choice === "mind" && remaining >= 2){
+          if (choice === "mind" && remaining >= 2) {
             removeMental = true;
             remaining -= 2;
-            await applyLegendarySet("Mental",["int","wis","cha"],[6,6,4]);
+            await applyLegendarySet("Mental", ["int","wis","cha"], [6,6,4]);
           }
         }
 
-        if(removePhysical){
-          for (let b of actor.items.filter(i =>
-            i.name.startsWith("ABP – Physical")
-          )) {
+        if (removePhysical) {
+          for (let b of actor.items.filter(i => i.name.startsWith("ABP – Physical")))
             await b.delete();
-          }
         }
 
-        if(removeMental){
-          for (let b of actor.items.filter(i =>
-            i.name.startsWith("ABP – Mental")
-          )) {
+        if (removeMental) {
+          for (let b of actor.items.filter(i => i.name.startsWith("ABP – Mental")))
             await b.delete();
-          }
         }
       }
 
-      async function applyLegendarySet(label, stats, values){
-        for(let i=0;i<stats.length;i++){
-          await actor.createEmbeddedDocuments("Item",[{
-            name:`Legendary – ${label} (${stats[i]})`,
-            type:"buff",
-            img: ICONS.legendary,
-            system:{
-              active:true,
-              subType:"perm",
-              hideFromToken:true,
-              changes:[{
-                formula:`+${values[i]}`,
-                operator:"add",
-                priority:0,
-                target:stats[i],
-                type:"enh"
+      async function applyLegendarySet(labelKey, statKeys, values) {
+        for (let i = 0; i < statKeys.length; i++) {
+          await actor.createEmbeddedDocuments("Item", [{
+            name:  `Legendary – ${labelKey} (${loc(`ABP.Stats.${statKeys[i]}`)})`,
+            type:  "buff",
+            img:   ICONS.legendary,
+            system: {
+              active:        true,
+              subType:       "perm",
+              hideFromToken: true,
+              changes: [{
+                formula:  `+${values[i]}`,
+                operator: "add",
+                priority: 0,
+                target:   statKeys[i],
+                type:     "enh"
               }]
             }
           }]);
@@ -292,7 +300,7 @@ const lvl = Math.min(rawHD, 20);
       await applyABPBase();
       await applyLegendary();
 
-      ui.notifications.info("ABP sincronizzato automaticamente.");
+      ui.notifications.info(loc("ABP.Synced"));
     }
   };
 });
@@ -306,17 +314,15 @@ Hooks.on("renderActorSheet", (app, html) => {
   if (!game.user.isGM) return;
 
   const actor = app.actor;
-
   if (!actor) return;
   if (actor.type !== "character" && actor.type !== "npc") return;
 
   const header = html.closest(".app").find(".window-header");
-
   if (header.find(".abp-manager-button").length > 0) return;
 
   const button = $(`
     <a class="abp-manager-button" style="margin-left:8px;">
-      <i class="fas fa-star"></i> ABP
+      <i class="fa-solid fa-arrow-trend-up"></i> ABP
     </a>
   `);
 
