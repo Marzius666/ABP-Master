@@ -1,0 +1,36 @@
+{
+  "id": "abp-master",
+  "title": "ABP Master Manager",
+  "description": "Automatic Bonus Progression + Legendary Manager for PF1",
+  "version": "1.0.0",
+  "authors": [
+    {
+      "name": "Marzio"
+    }
+  ],
+  "compatibility": {
+    "minimum": "13",
+    "verified": "13.351"
+  },
+  "scripts": ["scripts/abp-master.js"],
+  "languages": [
+    {
+      "lang": "it",
+      "name": "Italiano",
+      "path": "lang/it.json"
+    },
+    {
+      "lang": "en",
+      "name": "English",
+      "path": "lang/en.json"
+    }
+  ],
+  "relationships": {
+    "systems": [
+      {
+        "id": "pf1",
+        "type": "system"
+      }
+    ]
+  }
+}

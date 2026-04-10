@@ -1,0 +1,44 @@
+{
+  "ABP": {
+    "NoActorSelected": "No actor selected.",
+    "Synced": "ABP automatically synchronized.",
+    "ButtonLabel": "ABP",
+
+    "Dialogs": {
+      "Distribution": "{label} Distribution",
+      "ChooseStat": "Choose {label} ({value})",
+      "ChooseStat_Legendary": "Choose ability score",
+      "GiftsAvailable": "Gifts available: {remaining}"
+    },
+
+    "Buffs": {
+      "Defenses": "ABP – Defenses",
+      "Physical": "ABP – Physical ({stat})",
+      "Mental": "ABP – Mental ({stat})",
+      "LegendaryAbility": "Legendary – Ability ({stat})",
+      "LegendaryPhysical": "Legendary – Physical ({stat})",
+      "LegendaryMental": "Legendary – Mental ({stat})"
+    },
+
+    "Stats": {
+      "str": "Strength",
+      "dex": "Dexterity",
+      "con": "Constitution",
+      "int": "Intelligence",
+      "wis": "Wisdom",
+      "cha": "Charisma"
+    },
+
+    "Legendary": {
+      "ability": "Legendary Ability (+1 inherent)",
+      "body": "Legendary Body (2)",
+      "mind": "Legendary Mind (2)"
+    },
+
+    "Labels": {
+      "Mental": "Mental",
+      "Physical": "Physical",
+      "Confirm": "Confirm"
+    }
+  }
+}
